@@ -1,10 +1,18 @@
-import Patient from '../models/patient.js';
+import User from '../models/User.js';
+import bcrypt from 'bcryptjs';
 
 // CREATE
 const createPatient = async (req, res) => {
   try {
-    const patient = await Patient.create(req.body);
-    res.status(201).json(patient);
+    const { name, email, password } = req.body;
+    const hashedPassword = await bcrypt.hash(password || 'patient123', 10);
+    const user = await User.create({
+      name,
+      email,
+      password: hashedPassword,
+      role: 'patient',
+    });
+    res.status(201).json(user);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -13,7 +21,7 @@ const createPatient = async (req, res) => {
 // GET ALL
 const getPatients = async (req, res) => {
   try {
-    const patients = await Patient.find();
+    const patients = await User.find({ role: 'patient' });
     res.json(patients);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -23,7 +31,7 @@ const getPatients = async (req, res) => {
 // GET ONE
 const getPatientById = async (req, res) => {
   try {
-    const patient = await Patient.findById(req.params.id);
+    const patient = await User.findOne({ _id: req.params.id, role: 'patient' });
 
     if (!patient) {
       return res.status(404).json({ message: "Patient not found" });
@@ -38,7 +46,7 @@ const getPatientById = async (req, res) => {
 // UPDATE
 const updatePatient = async (req, res) => {
   try {
-    const patient = await Patient.findByIdAndUpdate(
+    const patient = await User.findByIdAndUpdate(
       req.params.id,
       req.body,
       { new: true }
@@ -57,7 +65,7 @@ const updatePatient = async (req, res) => {
 // DELETE
 const deletePatient = async (req, res) => {
   try {
-    const patient = await Patient.findByIdAndDelete(req.params.id);
+    const patient = await User.findByIdAndDelete(req.params.id);
 
     if (!patient) {
       return res.status(404).json({ message: "Patient not found" });

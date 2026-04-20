@@ -1,10 +1,18 @@
-import Doctor from '../models/Doctor.js';
+import User from '../models/User.js';
+import bcrypt from 'bcryptjs';
 
 // CREATE DOCTOR
 const createDoctor = async (req, res) => {
   try {
-    const doctor = await Doctor.create(req.body);
-    res.status(201).json(doctor);
+    const { name, email, password } = req.body;
+    const hashedPassword = await bcrypt.hash(password || 'doctor123', 10);
+    const user = await User.create({
+      name,
+      email,
+      password: hashedPassword,
+      role: 'doctor',
+    });
+    res.status(201).json(user);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -13,7 +21,7 @@ const createDoctor = async (req, res) => {
 // GET ALL DOCTORS
 const getDoctors = async (req, res) => {
   try {
-    const doctors = await Doctor.find();
+    const doctors = await User.find({ role: 'doctor' }).select('-password');
     res.json(doctors);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -23,7 +31,7 @@ const getDoctors = async (req, res) => {
 // GET ONE DOCTOR
 const getDoctorById = async (req, res) => {
   try {
-    const doctor = await Doctor.findById(req.params.id);
+    const doctor = await User.findOne({ _id: req.params.id, role: 'doctor' });
 
     if (!doctor) {
       return res.status(404).json({ message: "Doctor not found" });
@@ -38,7 +46,7 @@ const getDoctorById = async (req, res) => {
 // UPDATE DOCTOR
 const updateDoctor = async (req, res) => {
   try {
-    const doctor = await Doctor.findByIdAndUpdate(
+    const doctor = await User.findByIdAndUpdate(
       req.params.id,
       req.body,
       { new: true }
@@ -53,11 +61,10 @@ const updateDoctor = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-
 // DELETE DOCTOR
 const deleteDoctor = async (req, res) => {
   try {
-    const doctor = await Doctor.findByIdAndDelete(req.params.id);
+    const doctor = await User.findByIdAndDelete(req.params.id);
 
     if (!doctor) {
       return res.status(404).json({ message: "Doctor not found" });
